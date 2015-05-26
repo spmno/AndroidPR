@@ -12,14 +12,22 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -29,8 +37,26 @@ public class MainActivity extends Activity {
     private static final int MEDIA_TYPE_IMAGE = 1; 
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100; 
     private Uri fileUri    = null; 
-    private ImageView imageView;
+    private ImageView srcImageView;
+    private ImageView plateImageView;
+    private Button plateButton;
     static String currentImagePath;
+    private ProgressDialog progressDialog; 
+    
+    private Handler handler = new Handler(){  
+    	  
+        @Override  
+        public void handleMessage(Message msg) {  
+              
+            //关闭ProgressDialog  
+            progressDialog.dismiss();  
+            if (msg.what == 0) {
+            	new AlertDialog.Builder(MainActivity.this).setMessage("没有检测到车牌").setPositiveButton("确定",null).show();
+            } else {
+            	new AlertDialog.Builder(MainActivity.this).setMessage("检测到车牌").setPositiveButton("确定",null).show();
+            }
+              
+        }};  
     
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -41,7 +67,7 @@ public class MainActivity extends Activity {
                     //Log.i(TAG, "OpenCV loaded successfully");
 
                     // Load native library after(!) OpenCV initialization
-                    System.loadLibrary("detection_based_tracker");
+                    System.loadLibrary("plate_locate");
 
                 } break;
                 default:
@@ -56,7 +82,20 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		imageView = (ImageView)findViewById(R.id.imageView1);
+		srcImageView = (ImageView)findViewById(R.id.imageView1);
+		plateImageView = (ImageView)findViewById(R.id.imageView2);
+		plateButton = (Button)findViewById(R.id.button1);
+		plateButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+				fileUri = Uri.fromFile(getOutputMediaFile(MEDIA_TYPE_IMAGE));  // create a file to save the video
+			    intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);  // set the image file name
+
+			    // start the Video Capture Intent
+			    startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+			}});
 		//create new Intent
 	    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
@@ -110,16 +149,39 @@ public class MainActivity extends Activity {
 	        // Image captured and saved to fileUri specified in the Intent
 				//Uri uri = data.getData();
 				//String path = uri.getPath();
-				Bitmap bitmap = BitmapFactory.decodeFile(currentImagePath);
-				
-				imageView.setImageBitmap(bitmap);
+				Bitmap srcBitmap = BitmapFactory.decodeFile(currentImagePath);
+				Bitmap smallBitmap = ThumbnailUtils.extractThumbnail(srcBitmap, 480, 800); 
+				srcImageView.setImageBitmap(smallBitmap);
 				Toast.makeText(this, "Image saved to:\n" +
 						currentImagePath,
 	                  Toast.LENGTH_LONG).show();
-				Mat mat = new Mat();
-				Utils.bitmapToMat(bitmap, mat);
-				MatOfRect plates = new MatOfRect();
-				DetectionPlate.nativeDetect(mat.getNativeObjAddr(), plates.getNativeObjAddr());
+				//Mat mat = new Mat();
+				//Utils.bitmapToMat(bitmap, mat);
+				//Mat plate = new Mat();
+				progressDialog = ProgressDialog.show(MainActivity.this, "Loading...", "Please wait...", true, false);
+				new Thread(){  
+					  
+                    @Override  
+                    public void run() {  
+                        //需要花时间计算的方法  
+                    	   
+                          
+                        //向handler发消息  
+                    	int judgeCount = DetectionPlate.nativeDetect(currentImagePath);
+         				if (judgeCount > 0) {
+         					int dotPosition = currentImagePath.lastIndexOf('.');
+         					String path = currentImagePath.substring(0, dotPosition);
+         					path += "_judge_0.jpg";	
+         					Bitmap bitmap = BitmapFactory.decodeFile(path);
+         					plateImageView.setImageBitmap(bitmap);
+         					handler.sendEmptyMessage(0);  
+         				} else {
+                            handler.sendEmptyMessage(judgeCount);  
+         				}
+
+
+                    }}.start();  
+
 				
 	        } else if (resultCode == RESULT_CANCELED) {
 	             // User cancelled the image capture

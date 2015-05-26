@@ -12,6 +12,11 @@
 #undef max
 #endif
 
+#include <android/log.h>
+#define LOG_TAG "plate detection"
+#define LOGD(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+
 namespace easypr {
 
 class Utils {
@@ -45,6 +50,16 @@ class Utils {
  */
   static std::vector<std::string> getFiles(const std::string& folder,
                                            const bool all = true);
+
+  static void setSaveDir(const std::string& dir) {
+	  save_dir = dir;
+  }
+
+  static std::string& getSaveDir() {
+	  return save_dir;
+  }
+ private:
+  static std::string save_dir;
 };
 
 }

@@ -1,4 +1,5 @@
 #include "../include/plate_locate.h"
+#include "../include/util.h"
 
 /*! \namespace easypr
     Namespace where all the C++ EasyPR functionality resides
@@ -128,8 +129,10 @@ int CPlateLocate::colorSearch(const Mat& src, const Color r, Mat& out, vector<Ro
 	// 进行颜色查找
 	colorMatch(src, match_grey, r, false);
 
-
-	imwrite("./image/tmp/match_grey.jpg", match_grey);
+	string match_grey_path(Utils::getSaveDir());
+	match_grey_path += "/match_grey.jpg";
+	imwrite(match_grey_path, match_grey);
+	LOGD("match_grep.jpg saved!");
 	
 
 	Mat src_threshold;
@@ -138,9 +141,10 @@ int CPlateLocate::colorSearch(const Mat& src, const Color r, Mat& out, vector<Ro
 	Mat element = getStructuringElement(MORPH_RECT, Size(color_morph_width, color_morph_height));
 	morphologyEx(src_threshold, src_threshold, MORPH_CLOSE, element);
 
-	
-	imwrite("./image/tmp/color.jpg", src_threshold);
-	
+	string color_path(Utils::getSaveDir());
+	color_path += "/color.jpg";
+	imwrite(color_path, src_threshold);
+	LOGD("color.jpg saved!");
 
 	src_threshold.copyTo(out);
 
@@ -1499,6 +1503,7 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 	}
 
 	//高斯模糊。Size中的数字影响车牌定位的效果。
+
 	GaussianBlur(src, src_blur, Size(m_GaussianBlurSize, m_GaussianBlurSize),
 		0, 0, BORDER_DEFAULT);
 
@@ -1533,6 +1538,7 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 	//所以你需要自己转换一下，H*2，S/255, V/255
 
 	// 默认蓝色车牌
+	LOGD("Recognize blue plate");
 	cv::Mat tmp;
 	cv::cvtColor(src, tmp, CV_BGR2HSV);
 	vector<Mat> hsvSplit;
@@ -1595,7 +1601,7 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 		{
 			cv::Mat roi = dst_blue(safeBoundRect);
 			roi.setTo(0);
-            cv::swap(roi, dst_blue);
+            //cv::swap(roi, dst_blue);
 		}
 		else
 		{
@@ -1604,6 +1610,8 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 		++itb;
 	}
 	//////////////////////////////////////////////////////////////////////////
+
+	LOGD("Recognize yellow plate");
 	for (int i = 0; i<tmp.rows; i++)
 	{
 		for (int j = 0; j<tmp.cols; j++)
@@ -1683,6 +1691,7 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 	//imshow("out_blue",out_blue);
 	cv::Mat out_yellow;
 	cv::multiply(grad, dst_yellow, out_yellow);
+
 	if (m_debug)
 	{
 		stringstream ss(stringstream::in | stringstream::out);
@@ -1792,6 +1801,8 @@ int CPlateLocate::plateLocate(Mat src, vector<Mat>& resultVec, int index)
 		}
 	}
 	int k = 1;
+
+	LOGD("Begin to dispose %d rectangles", rects.size());
 	for (int i = 0; i< rects.size(); i++)
 	{
 		RotatedRect minRect = rects[i];
