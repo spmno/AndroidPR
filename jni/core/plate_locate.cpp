@@ -40,7 +40,7 @@ void CPlateLocate::setLifemode(bool param)
 		setVerifyError(0.75);
 		setVerifyAspect(4.0);
 		setVerifyMin(1);
-		setVerifyMax(200);
+		setVerifyMax(500);
 	} 
 	else
 	{

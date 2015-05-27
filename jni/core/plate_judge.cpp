@@ -9,7 +9,7 @@ namespace easypr{
 CPlateJudge::CPlateJudge()
 {
 	//cout << "CPlateJudge" << endl;
-	m_path = "/sdcard/svm.xml";
+	m_path = Utils::getResourceDir() + "/svm.xml";
 	m_getFeatures = getHistogramFeatures;
 
 	LoadModel();

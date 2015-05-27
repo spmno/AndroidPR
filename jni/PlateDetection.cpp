@@ -12,7 +12,6 @@ using namespace std;
 using namespace cv;
 using namespace easypr;
 
-
 /*
  * Class:     com_mxnavi_platedetection_DetectionPlate
  * Method:    nativeSetFaceSize
@@ -52,6 +51,8 @@ JNIEXPORT void JNICALL Java_com_mxnavi_platedetection_DetectionPlate_nativeDetec
 #endif
 }
 
+#define MAX_COLS 600
+
 JNIEXPORT jint JNICALL Java_com_mxnavi_platedetection_DetectionPlate_nativeDetect__Ljava_lang_String_2
   (JNIEnv *env, jclass, jstring imageName)
 {
@@ -66,9 +67,17 @@ JNIEXPORT jint JNICALL Java_com_mxnavi_platedetection_DetectionPlate_nativeDetec
 	Utils::setSaveDir(saveDirPath);
 	//Mat srcImage = imread("/sdcard/test.jpg");
 	Mat srcImage = imread(baseName);
+	Mat readyImage;
+	LOGD("image rows = %d, cols = %d", srcImage.rows, srcImage.cols);
+
+	if (srcImage.cols > MAX_COLS) {
+		int height = srcImage.rows * MAX_COLS * 1.0/srcImage.cols;
+		resize(srcImage, readyImage, Size(MAX_COLS, height));
+	}
+
 	CPlateLocate plate;
 	plate.setLifemode(true);
-	int result = plate.plateLocate(srcImage, locateResultVec);
+	int result = plate.plateLocate(readyImage, locateResultVec);
 	LOGD("plateLocate over!");
 	result = locateResultVec.size();
 	for (int i = 0; i < locateResultVec.size(); ++i) {
@@ -94,4 +103,12 @@ JNIEXPORT jint JNICALL Java_com_mxnavi_platedetection_DetectionPlate_nativeDetec
 	}
 	LOGD("judge over, judge %d plates!", result);
 	return result;
+}
+
+JNIEXPORT void JNICALL Java_com_mxnavi_platedetection_DetectionPlate_setResourcePath(JNIEnv *env, jclass, jstring pathName)
+{
+	const char* str = env->GetStringUTFChars(pathName, JNI_FALSE);
+	string resourcePath(str);
+	Utils::setResourceDir(resourcePath);
+	LOGD("set ndk path = %s", resourcePath.c_str());
 }

@@ -53,11 +53,16 @@ public class MainActivity extends Activity {
             if (msg.what == 0) {
             	new AlertDialog.Builder(MainActivity.this).setMessage("没有检测到车牌").setPositiveButton("确定",null).show();
             } else {
+					int dotPosition = currentImagePath.lastIndexOf('.');
+					String path = currentImagePath.substring(0, dotPosition);
+					path += "_judge_0.jpg";	
+					Bitmap bitmap = BitmapFactory.decodeFile(path);
+					plateImageView.setImageBitmap(bitmap);
             	new AlertDialog.Builder(MainActivity.this).setMessage("检测到车牌").setPositiveButton("确定",null).show();
             }
               
         }};  
-    
+    /*
     private BaseLoaderCallback  mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -77,7 +82,7 @@ public class MainActivity extends Activity {
             }
         }
     };
-    
+    */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -96,6 +101,7 @@ public class MainActivity extends Activity {
 			    // start the Video Capture Intent
 			    startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
 			}});
+		setResource2NDK();
 		//create new Intent
 	    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
@@ -105,14 +111,14 @@ public class MainActivity extends Activity {
 	    // start the Video Capture Intent
 	    startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
 	}
-	
+	/*
     @Override
     public void onResume()
     {
         super.onResume();
         OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_10, this, mLoaderCallback);
     }
-	
+	*/
 	private static File getOutputMediaFile(int type){ 
 		// To be safe, you should check that the SDCard is mounted  
 	    // using Environment.getExternalStorageState() before doing this.  
@@ -169,14 +175,9 @@ public class MainActivity extends Activity {
                         //向handler发消息  
                     	int judgeCount = DetectionPlate.nativeDetect(currentImagePath);
          				if (judgeCount > 0) {
-         					int dotPosition = currentImagePath.lastIndexOf('.');
-         					String path = currentImagePath.substring(0, dotPosition);
-         					path += "_judge_0.jpg";	
-         					Bitmap bitmap = BitmapFactory.decodeFile(path);
-         					plateImageView.setImageBitmap(bitmap);
-         					handler.sendEmptyMessage(0);  
+         					handler.sendEmptyMessage(judgeCount);  
          				} else {
-                            handler.sendEmptyMessage(judgeCount);  
+                            handler.sendEmptyMessage(0);  
          				}
 
 
@@ -190,4 +191,14 @@ public class MainActivity extends Activity {
 	        }
 		}
 	}
+	
+	public void setResource2NDK(){
+	       File sdDir = null;
+	       boolean sdCardExist = Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED);  
+	                          
+	       if (sdCardExist) {                              
+	         sdDir = Environment.getExternalStorageDirectory();//获取跟目录
+	       }  
+	       DetectionPlate.setResourcePath(sdDir.toString());
+	} 
 }

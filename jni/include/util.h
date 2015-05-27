@@ -58,8 +58,17 @@ class Utils {
   static std::string& getSaveDir() {
 	  return save_dir;
   }
+
+  static void setResourceDir(const std::string& dir) {
+	  resource_dir = dir;
+  }
+
+  static std::string& getResourceDir() {
+	  return resource_dir;
+  }
  private:
   static std::string save_dir;
+  static std::string resource_dir;
 };
 
 }
