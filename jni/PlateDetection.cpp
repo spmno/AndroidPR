@@ -73,6 +73,11 @@ JNIEXPORT jint JNICALL Java_com_mxnavi_platedetection_DetectionPlate_nativeDetec
 	if (srcImage.cols > MAX_COLS) {
 		int height = srcImage.rows * MAX_COLS * 1.0/srcImage.cols;
 		resize(srcImage, readyImage, Size(MAX_COLS, height));
+		stringstream fileNameStream;
+		fileNameStream << justFileName << "_resize" << ".jpg";
+		string fileName;
+		fileNameStream >> fileName;
+		imwrite(fileName, readyImage);
 	}
 
 	CPlateLocate plate;

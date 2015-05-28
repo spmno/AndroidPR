@@ -1,6 +1,11 @@
 package com.mxnavi.platedetection;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -15,6 +20,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
@@ -51,6 +58,9 @@ public class MainActivity extends Activity {
             //关闭ProgressDialog  
             progressDialog.dismiss();  
             if (msg.what == 0) {
+            	Resources res = getResources();  
+                Bitmap bitmap = BitmapFactory.decodeResource(res, R.drawable.cry);
+            	plateImageView.setImageBitmap(bitmap);
             	new AlertDialog.Builder(MainActivity.this).setMessage("没有检测到车牌").setPositiveButton("确定",null).show();
             } else {
 					int dotPosition = currentImagePath.lastIndexOf('.');
@@ -199,6 +209,31 @@ public class MainActivity extends Activity {
 	       if (sdCardExist) {                              
 	         sdDir = Environment.getExternalStorageDirectory();//获取跟目录
 	       }  
+	       
+	       try {
+	    	   InputStreamReader inputReader = new InputStreamReader( getResources().getAssets().open("svm.xml") );
+	    	   BufferedReader bufReader = new BufferedReader(inputReader);
+	    	   String destFileName = sdDir.toString() + "/svm.xml";
+	    	   File destFile = new File(destFileName);
+	    	   if (destFile.exists()) {
+	    		   DetectionPlate.setResourcePath(sdDir.toString());
+	    		   return;
+	    	   }
+	    	   BufferedWriter bufWriter = new BufferedWriter(new FileWriter(destFile));
+	    	   String line = bufReader.readLine();  
+	    	   while(line != null) {
+	    		   bufWriter.write(line);
+	    		   bufWriter.write("\r\n");
+	    		   line = bufReader.readLine();
+	    	   }
+	    	   bufWriter.flush();
+	    	   bufReader.close();
+	    	   bufWriter.close();
+	    	   
+	       } catch (IOException e) {
+			// TODO Auto-generated catch block
+	    	   e.printStackTrace();
+	       } 
 	       DetectionPlate.setResourcePath(sdDir.toString());
 	} 
 }
